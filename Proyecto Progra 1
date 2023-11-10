@@ -1,0 +1,704 @@
+import tkinter as tk
+import mysql.connector
+from mysql.connector import Error
+
+# Definir dialogo_principal como variable global
+dialogo_principal = None
+dialogo_inventario = None
+dialogo_produccion = None
+dialogo_pedidos = None
+
+# Función para verificar las credenciales de inicio de sesión
+def verificar_credenciales():
+    usuario = usuario_entry.get()
+    contrasena = contrasena_entry.get()
+
+    if usuario == "Proferros Villa Nueva" and contrasena == "Proferros":
+        print("Credenciales correctas")
+        ventana_inicio.destroy()
+        abrir_dialogo_principal()
+    else:
+        print("Credenciales incorrectas")
+
+# Función para abrir el cuadro de diálogo principal
+def abrir_dialogo_principal():
+    global dialogo_principal
+
+    dialogo_principal = tk.Tk()
+    dialogo_principal.title("Cuadro de Diálogo Principal")
+    dialogo_principal.geometry("400x400")
+    dialogo_principal.resizable(False, False)
+
+    font = ("Baskerville Old Face", 11)  # Tamaño de fuente
+
+    # Agregar una imagen de fondo al cuadro de diálogo de inventario (reemplaza la ruta de la imagen)
+    imagen_fondo_inventario = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Menu.gif")
+    fondo_inventario = tk.Label(dialogo_inventario, image=imagen_fondo_inventario)
+    fondo_inventario.place(x=0, y=0, relwidth=1, relheight=1)
+
+    # Botones que abren cuadros de diálogo
+    boton1 = tk.Button(dialogo_principal, text="Gestión de Inventario", command=abrir_dialogo_inventario, font=("Georgia", 10))
+    boton2 = tk.Button(dialogo_principal, text="Control de Producción", command=abrir_dialogo_produccion, font=("Georgia", 10))
+    boton3 = tk.Button(dialogo_principal, text="Registro de Pedidos", command=abrir_dialogo_pedidos, font=("Georgia", 10))
+
+    # Ajusta la posición de los botones
+    boton1.place(x=45, y=160)
+    boton2.place(x=205, y=160)  # Coloca el botón en la posición correcta
+    boton3.place(x=135, y=210)
+
+    dialogo_principal.mainloop()
+
+# Función para abrir el cuadro de diálogo de gestión de inventario
+def abrir_dialogo_inventario():
+    global dialogo_inventario
+
+    # Cierra el cuadro de diálogo principal
+    dialogo_principal.withdraw()
+
+    dialogo_inventario = tk.Toplevel()
+    dialogo_inventario.title("Gestión de Inventario")
+    dialogo_inventario.geometry("690x460")
+    dialogo_inventario.resizable(False, False)
+
+    # Agregar una imagen de fondo al cuadro de diálogo de inventario (reemplaza la ruta de la imagen)
+    imagen_fondo_inventario = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Gestion Inventario.gif")
+    fondo_inventario = tk.Label(dialogo_inventario, image=imagen_fondo_inventario)
+    fondo_inventario.place(x=0, y=0, relwidth=1, relheight=1)
+
+    # Definir las variables de entrada y etiquetas para los campos
+    entrada_id = tk.Entry(dialogo_inventario)
+    entrada_nombre = tk.Entry(dialogo_inventario)
+    entrada_categoria = tk.Entry(dialogo_inventario)
+    entrada_marca = tk.Entry(dialogo_inventario)
+    entrada_numero_modelo = tk.Entry(dialogo_inventario)
+    entrada_cantidad_stock = tk.Entry(dialogo_inventario)
+    entrada_nivel_minimo_stock = tk.Entry(dialogo_inventario)
+    entrada_nivel_maximo_stock = tk.Entry(dialogo_inventario)
+    entrada_precio_unitario = tk.Entry(dialogo_inventario)
+    entrada_proveedor = tk.Entry(dialogo_inventario)
+    entrada_fecha_adquisicion = tk.Entry(dialogo_inventario)
+    entrada_fecha_vencimiento = tk.Entry(dialogo_inventario)
+
+    etiqueta_id = tk.Label(dialogo_inventario, text="ID del Producto:", font=("Bell MT", 12))
+    etiqueta_nombre = tk.Label(dialogo_inventario, text="Nombre del Producto:", font=("Bell MT", 12))
+    etiqueta_categoria = tk.Label(dialogo_inventario, text="Categoría:", font=("Bell MT", 12))
+    etiqueta_marca = tk.Label(dialogo_inventario, text="Marca:", font=("Bell MT", 12))
+    etiqueta_numero_modelo = tk.Label(dialogo_inventario, text="Número de Modelo:", font=("Bell MT", 12))
+    etiqueta_cantidad_stock = tk.Label(dialogo_inventario, text="Cantidad en Stock:", font=("Bell MT", 12))
+    etiqueta_nivel_minimo_stock = tk.Label(dialogo_inventario, text="Nivel Mínimo de Stock:", font=("Bell MT", 12))
+    etiqueta_nivel_maximo_stock = tk.Label(dialogo_inventario, text="Nivel Máximo de Stock:", font=("Bell MT", 12))
+    etiqueta_precio_unitario = tk.Label(dialogo_inventario, text="Precio Unitario:", font=("Bell MT", 12))
+    etiqueta_proveedor = tk.Label(dialogo_inventario, text="Proveedor:", font=("Bell MT", 12))
+    etiqueta_fecha_adquisicion = tk.Label(dialogo_inventario, text="Fecha de Adquisición:", font=("Bell MT", 12))
+    etiqueta_fecha_vencimiento = tk.Label(dialogo_inventario, text="Fecha de Vencimiento:", font=("Bell MT", 12))
+
+    # Función para agregar un registro
+    def agregar_registro():
+        # Obtener valores de los campos de entrada
+        id_producto = entrada_id.get()
+        nombre_producto = entrada_nombre.get()
+        categoria = entrada_categoria.get()
+        marca = entrada_marca.get()
+        numero_modelo = entrada_numero_modelo.get()
+        cantidad_stock = entrada_cantidad_stock.get()
+        nivel_minimo_stock = entrada_nivel_minimo_stock.get()
+        nivel_maximo_stock = entrada_nivel_maximo_stock.get()
+        precio_unitario = entrada_precio_unitario.get()
+        proveedor = entrada_proveedor.get()
+        fecha_adquisicion = entrada_fecha_adquisicion.get()
+        fecha_vencimiento = entrada_fecha_vencimiento.get()
+
+        # Conexión a la base de datos MySQL
+        try:
+            conexion = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="root",
+                database="proferros"
+            )
+            if conexion.is_connected():
+                cursor = conexion.cursor()
+                print("Conexión exitosa a la base de datos")
+
+                # Sentencia SQL para insertar un registro en la tabla de gestión de inventario
+                sql = "INSERT INTO gestion_inventario (`Id del producto`, `Nombre del producto`, `Categoria`, `Marca`, `Numero de modelo`, `Cantidad en stock`, `Nivel minimo de stock`, `Nivel maximo de stock`, `Precio unitario (Q)`, `Proveedor`, `Fecha de adquisicion`, `Fecha de vencimiento`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                valores = (id_producto, nombre_producto, categoria, marca, numero_modelo, cantidad_stock, nivel_minimo_stock, nivel_maximo_stock, precio_unitario, proveedor, fecha_adquisicion, fecha_vencimiento)
+
+                # Ejecutar la consulta SQL para agregar el registro
+                try:
+                    cursor.execute(sql, valores)
+                    conexion.commit()
+                    print("Registro agregado exitosamente")
+                except Error as e:
+                    print("Error al agregar registro:", e)
+                finally:
+                    cursor.close()
+                    conexion.close()
+                    print("Conexión cerrada")
+        except Error as e:
+            print("Error de conexión a la base de datos:", e)
+
+    # Función para eliminar un registro por ID
+    def eliminar_registro():
+
+        # Oculta el cuadro de diálogo de inventario
+        dialogo_inventario.withdraw()
+
+        # Crear una nueva ventana para ingresar el ID del producto a eliminar
+        ventana_eliminar_inventario = tk.Toplevel(dialogo_inventario)
+        ventana_eliminar_inventario.title("Eliminar Registro")
+        ventana_eliminar_inventario.geometry("320x255")
+        ventana_eliminar_inventario.resizable(False, False)
+        
+        # Agregar una imagen de fondo al cuadro de diálogo de inventario (reemplaza la ruta de la imagen)
+        imagen_fondo_eliminar_inventario = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Eliminar Registro.gif")
+        fondo_eliminar_inventario = tk.Label(ventana_eliminar_inventario, image=imagen_fondo_eliminar_inventario)
+        fondo_eliminar_inventario.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # Etiqueta y campo de entrada para ingresar el ID del producto
+        etiqueta_id_eliminar = tk.Label(ventana_eliminar_inventario, text="ID del Producto a Eliminar:", font=("Bell MT", 12))
+        etiqueta_id_eliminar.place(x=20, y=140)
+        entrada_id_eliminar = tk.Entry(ventana_eliminar_inventario)
+        entrada_id_eliminar.place(x=180, y=140)
+
+        # Función para realizar la eliminación
+        def confirmar_eliminacion():
+            id_producto = entrada_id_eliminar.get()
+            
+            # Conexión a la base de datos MySQL y eliminar el producto con el ID proporcionado
+            try:
+                conexion = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    password="root",
+                    database="proferros"
+                )
+                if conexion.is_connected():
+                    cursor = conexion.cursor()
+                    print("Conexión exitosa a la base de datos")
+
+                    # Sentencia SQL para eliminar un registro en la tabla de gestión de inventario
+                    sql = "DELETE FROM gestion_inventario WHERE `Id del producto` = %s"
+                    valores = (id_producto,)
+
+                    # Ejecutar la consulta SQL para eliminar el registro
+                    try:
+                        cursor.execute(sql, valores)
+                        conexion.commit()
+                        print("Registro eliminado exitosamente")
+                    except Error as e:
+                        print("Error al eliminar registro:", e)
+                    finally:
+                        cursor.close()
+                        conexion.close()
+                        print("Conexión cerrada")
+            except Error as e:
+                print("Error de conexión a la base de datos:", e)
+
+        # Botón para confirmar la eliminación
+        boton_confirmar_eliminacion = tk.Button(ventana_eliminar_inventario, text="Confirmar Eliminación", command=confirmar_eliminacion, font=("Bell MT", 12))
+        boton_confirmar_eliminacion.place(x=30, y=190)
+
+        # Función para regresar a la gestión de inventario
+        def regresar_inventario_desde_eliminar():
+            # Oculta el cuadro de diálogo de eliminar registro
+            ventana_eliminar_inventario.withdraw()
+
+            # Muestra nuevamente el cuadro de diálogo de inventario
+            dialogo_inventario.deiconify()
+
+        # Botón para regresar a la gestión de inventario
+        boton_regresar_inventario_desde_eliminar = tk.Button(ventana_eliminar_inventario, text="Regresar a Inventario", command=regresar_inventario_desde_eliminar, font=("Bell MT", 12))
+        boton_regresar_inventario_desde_eliminar.place(x=180, y=190)
+
+# Botones para agregar y eliminar registros
+    boton_agregar = tk.Button(dialogo_inventario, text="Agregar Registro", command=agregar_registro, font=("Bell MT", 12))
+    boton_agregar.place(x=550, y=180)
+
+    boton_eliminar = tk.Button(dialogo_inventario, text="Eliminar Registro", command=eliminar_registro, font=("Bell MT", 12))
+    boton_eliminar.place(x=550, y=240)
+
+    def regresar_dialogo_principal():
+        dialogo_inventario.withdraw()
+        dialogo_principal.deiconify()
+
+    # Botón para regresar al cuadro de diálogo principal
+    boton_regresar_principal = tk.Button(dialogo_inventario, text="Regresar al Menu", command=regresar_dialogo_principal, font=("Bell MT", 12))
+    boton_regresar_principal.place(x=550, y=300)
+
+    # Ajusta la posición de etiquetas y campos de entrada usando place()
+    etiqueta_id.place(x=220, y=80)
+    entrada_id.place(x=400, y=80)
+
+    etiqueta_nombre.place(x=220, y=110)
+    entrada_nombre.place(x=400, y=110)
+
+    etiqueta_categoria.place(x=220, y=140)
+    entrada_categoria.place(x=400, y=140)
+
+    etiqueta_marca.place(x=220, y=170)
+    entrada_marca.place(x=400, y=170)
+
+    etiqueta_numero_modelo.place(x=220, y=200)
+    entrada_numero_modelo.place(x=400, y=200)
+
+    etiqueta_cantidad_stock.place(x=220, y=230)
+    entrada_cantidad_stock.place(x=400, y=230)
+
+    etiqueta_nivel_minimo_stock.place(x=220, y=260)
+    entrada_nivel_minimo_stock.place(x=400, y=260)
+
+    etiqueta_nivel_maximo_stock.place(x=220, y=290)
+    entrada_nivel_maximo_stock.place(x=400, y=290)
+
+    etiqueta_precio_unitario.place(x=220, y=320)
+    entrada_precio_unitario.place(x=400, y=320)
+
+    etiqueta_proveedor.place(x=220, y=350)
+    entrada_proveedor.place(x=400, y=350)
+
+    etiqueta_fecha_adquisicion.place(x=220, y=380)
+    entrada_fecha_adquisicion.place(x=400, y=380)
+
+    etiqueta_fecha_vencimiento.place(x=220, y=410)
+    entrada_fecha_vencimiento.place(x=400, y=410)
+
+    dialogo_inventario.mainloop()
+
+# Función para abrir el cuadro de diálogo de control de producción
+def abrir_dialogo_produccion():
+    global dialogo_produccion
+
+    # Cierra el cuadro de diálogo principal
+    dialogo_principal.withdraw()
+
+    dialogo_produccion = tk.Toplevel()
+    dialogo_produccion.title("Gestión de Inventario")
+    dialogo_produccion.geometry("660x440")
+    dialogo_produccion.resizable(False, False)
+
+    # Agregar una imagen de fondo al cuadro de diálogo de inventario (reemplaza la ruta de la imagen)
+    imagen_fondo_produccion = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Control Produccion.gif")
+    fondo_produccion = tk.Label(dialogo_produccion, image=imagen_fondo_produccion)
+    fondo_produccion.place(x=0, y=0, relwidth=1, relheight=1)
+
+    # Definir las variables de entrada y etiquetas para los campos
+    entrada_id = tk.Entry(dialogo_produccion)
+    entrada_producto = tk.Entry(dialogo_produccion)
+    entrada_cantidad = tk.Entry(dialogo_produccion)
+    entrada_fecha_inicio = tk.Entry(dialogo_produccion)
+    entrada_estado_produccion = tk.Entry(dialogo_produccion)
+    entrada_observaciones= tk.Entry(dialogo_produccion)
+
+    etiqueta_id = tk.Label(dialogo_produccion, text="ID de producción:", font=("Bell MT", 11))
+    etiqueta_producto= tk.Label(dialogo_produccion, text="Producto a fabricar:", font=("Bell MT", 11))
+    etiqueta_cantidad = tk.Label(dialogo_produccion, text="Cantidad a producir:", font=("Bell MT", 11))
+    etiqueta_fecha_inicio = tk.Label(dialogo_produccion, text="Fecha de inicio de producción:", font=("Bell MT", 11))
+    etiqueta_estado_produccion = tk.Label(dialogo_produccion, text="Estado de la producción:", font=("Bell MT", 11))
+    etiqueta_observaciones = tk.Label(dialogo_produccion, text="Observaciones:", font=("Bell MT", 11))
+
+    # Función para agregar un registro
+    def agregar_registro():
+        # Obtener valores de los campos de entrada
+        id_produccion= entrada_id.get()
+        producto_fabricar = entrada_producto.get()
+        cantidad_producir = entrada_cantidad.get()
+        fecha_inicio = entrada_fecha_inicio.get()
+        estado_produccion = entrada_estado_produccion.get()
+        observaciones = entrada_observaciones.get()
+
+        # Conexión a la base de datos MySQL
+        try:
+            conexion = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="root",
+                database="proferros"
+            )
+            if conexion.is_connected():
+                cursor = conexion.cursor()
+                print("Conexión exitosa a la base de datos")
+
+                # Sentencia SQL para insertar un registro en la tabla de gestión de inventario
+                sql = "INSERT INTO control_produccion (`Id de producción`, `Producto a fabricar`, `Cantidad a producir`, `Fecha de inicio de produccion`, `Estado de la produccion`, `Observaciones`) VALUES (%s, %s, %s, %s, %s, %s)"
+                valores = (id_produccion, producto_fabricar, cantidad_producir, fecha_inicio, estado_produccion, observaciones)
+
+                # Ejecutar la consulta SQL para agregar el registro
+                try:
+                    cursor.execute(sql, valores)
+                    conexion.commit()
+                    print("Registro agregado exitosamente")
+                except Error as e:
+                    print("Error al agregar registro:", e)
+                finally:
+                    cursor.close()
+                    conexion.close()
+                    print("Conexión cerrada")
+        except Error as e:
+            print("Error de conexión a la base de datos:", e)
+
+    # Función para eliminar un registro por ID
+    def eliminar_registro_produccion():
+
+        # Oculta el cuadro de diálogo de inventario
+        dialogo_produccion.withdraw()
+
+        # Crear una nueva ventana para ingresar el ID del producto a eliminar
+        ventana_eliminar_produccion= tk.Toplevel(dialogo_produccion)
+        ventana_eliminar_produccion.title("Eliminar Registro")
+        ventana_eliminar_produccion.geometry("375x250")
+        ventana_eliminar_produccion.resizable(False, False)
+
+        # Agregar una imagen de fondo al cuadro de diálogo de producto (reemplaza la ruta de la imagen)       
+        imagen_fondo_eliminar_produccion = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Eliminar Registro 1.gif")
+        fondo_eliminar_produccion = tk.Label(ventana_eliminar_produccion, image=imagen_fondo_eliminar_produccion)
+        fondo_eliminar_produccion.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # Etiqueta y campo de entrada para ingresar el ID del producto
+        etiqueta_id_eliminar = tk.Label(ventana_eliminar_produccion, text="ID del Producto:", font=("Bell MT", 11))
+        etiqueta_id_eliminar.place(x=100, y=110)
+        entrada_id_eliminar = tk.Entry(ventana_eliminar_produccion)
+        entrada_id_eliminar.place(x=240, y=110)
+
+        # Función para realizar la eliminación
+        def confirmar_eliminacion():
+            id_produccion = entrada_id_eliminar.get()
+            
+            # Conexión a la base de datos MySQL y eliminar el producto con el ID proporcionado
+            try:
+                conexion = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    password="root",
+                    database="proferros"
+                )
+                if conexion.is_connected():
+                    cursor = conexion.cursor()
+                    print("Conexión exitosa a la base de datos")
+
+                    # Sentencia SQL para eliminar un registro en la tabla de gestión de inventario
+                    sql = "DELETE FROM gestion_inventario WHERE `Id de producción` = %s"
+                    valores = (id_produccion,)
+
+                    # Ejecutar la consulta SQL para eliminar el registro
+                    try:
+                        cursor.execute(sql, valores)
+                        conexion.commit()
+                        print("Registro eliminado exitosamente")
+                    except Error as e:
+                        print("Error al eliminar registro:", e)
+                    finally:
+                        cursor.close()
+                        conexion.close()
+                        print("Conexión cerrada")
+            except Error as e:
+                print("Error de conexión a la base de datos:", e)
+
+        # Botón para confirmar la eliminación
+        boton_confirmar_eliminacion = tk.Button(ventana_eliminar_produccion, text="Confirmar Eliminación", command=confirmar_eliminacion, font=("Bell MT", 10))
+        boton_confirmar_eliminacion.place(x=80, y=160)
+
+        # Función para regresar a la gestión de inventario
+        def regresar_inventario_desde_eliminar():
+            # Oculta el cuadro de diálogo de eliminar registro
+            ventana_eliminar_produccion.withdraw()
+
+            # Muestra nuevamente el cuadro de diálogo de inventario
+            dialogo_produccion.deiconify()
+
+        # Botón para regresar a la gestión de inventario
+        boton_regresar_inventario_desde_eliminar = tk.Button(ventana_eliminar_produccion, text="Regresar a Inventario", command=regresar_inventario_desde_eliminar, font=("Bell MT", 10))
+        boton_regresar_inventario_desde_eliminar.place(x=235, y=160)
+
+# Botones para agregar y eliminar registros
+    boton_agregar = tk.Button(dialogo_produccion, text="Agregar Registro", command=agregar_registro, font=("Bell MT", 11))
+    boton_agregar.place(x=50, y=300)
+
+    boton_eliminar = tk.Button(dialogo_produccion, text="Eliminar Registro", command=eliminar_registro_produccion, font=("Bell MT", 11))
+    boton_eliminar.place(x=230, y=300)
+
+    def regresar_dialogo_principal():
+        dialogo_produccion.withdraw()
+        dialogo_principal.deiconify()
+
+    # Botón para regresar al cuadro de diálogo principal
+    boton_regresar_principal = tk.Button(dialogo_produccion, text="Regresar al Menu", command=regresar_dialogo_principal, font=("Bell MT", 11))
+    boton_regresar_principal.place(x=140, y=340)
+
+    # Ajusta la posición de etiquetas y campos de entrada usando place()
+    etiqueta_id.place(x=40, y=100)
+    entrada_id.place(x=240, y=100)
+
+    etiqueta_producto.place(x=40, y=130)
+    entrada_producto.place(x=240, y=130)
+
+    etiqueta_cantidad.place(x=40, y=160)
+    entrada_cantidad.place(x=240, y=160)
+
+    etiqueta_fecha_inicio.place(x=40, y=190)
+    entrada_fecha_inicio.place(x=240, y=190)
+
+    etiqueta_estado_produccion.place(x=40, y=220)
+    entrada_estado_produccion.place(x=240, y=220)
+
+    etiqueta_observaciones.place(x=40, y=250)
+    entrada_observaciones.place(x=240, y=250)
+
+    dialogo_produccion.mainloop()
+
+# Función para abrir el cuadro de diálogo de registro de pedidos
+def abrir_dialogo_pedidos():
+    global dialogo_pedidos
+
+    # Cierra el cuadro de diálogo principal
+    dialogo_principal.withdraw()
+
+    dialogo_pedidos = tk.Toplevel()
+    dialogo_pedidos.title("Registro de pedidos")
+    dialogo_pedidos.geometry("750x500")
+    dialogo_pedidos.resizable(False, False)
+
+    # Agregar una imagen de fondo al cuadro de diálogo de pedidos(reemplaza la ruta de la imagen)
+    imagen_fondo_pedidos = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Registro Pedidos.gif")
+    fondo_pedidos = tk.Label(dialogo_pedidos, image=imagen_fondo_pedidos)
+    fondo_pedidos.place(x=0, y=0, relwidth=1, relheight=1)
+
+    # Definir las variables de entrada y etiquetas para los campos
+    entrada_id = tk.Entry(dialogo_pedidos)
+    entrada_fecha_pedido = tk.Entry(dialogo_pedidos)
+    entrada_cliente = tk.Entry(dialogo_pedidos)
+    entrada_productos_solicitados = tk.Entry(dialogo_pedidos)
+    entrada_costo_total = tk.Entry(dialogo_pedidos)
+    entrada_estado_pedido = tk.Entry(dialogo_pedidos)
+    entrada_metodo_pago = tk.Entry(dialogo_pedidos)
+    entrada_fecha_entrega_estimada = tk.Entry(dialogo_pedidos)
+    entrada_direccion_entrega = tk.Entry(dialogo_pedidos)
+    entrada_estado_pago = tk.Entry(dialogo_pedidos)
+
+    etiqueta_id = tk.Label(dialogo_pedidos, text="ID del pedido:", font=("Bell MT", 12))
+    etiqueta_fecha_pedido = tk.Label(dialogo_pedidos, text="Fecha del pedido:", font=("Bell MT", 12))
+    etiqueta_cliente = tk.Label(dialogo_pedidos, text="Cliente:", font=("Bell MT", 12))
+    etiqueta_productos_solicitados = tk.Label(dialogo_pedidos, text="Productos solicitados:", font=("Bell MT", 12))
+    etiqueta_costo_total = tk.Label(dialogo_pedidos, text="Costo total del pedido:", font=("Bell MT", 12))
+    etiqueta_estado_pedido = tk.Label(dialogo_pedidos, text="Estado del pedido:", font=("Bell MT", 12))
+    etiqueta_metodo_pago = tk.Label(dialogo_pedidos, text="Metodo de pago:", font=("Bell MT", 12))
+    etiqueta_fecha_entrega_estimada = tk.Label(dialogo_pedidos, text="Fecha de entrega estimada:", font=("Bell MT", 12))
+    etiqueta_direccion_entrega = tk.Label(dialogo_pedidos, text="Direccion de entrega:", font=("Bell MT", 12))
+    etiqueta_estado_pago = tk.Label(dialogo_pedidos, text="Estado de pago:", font=("Bell MT", 12))
+
+    # Función para agregar un registro
+    def agregar_registro():
+        # Obtener valores de los campos de entrada
+        id_pedido = entrada_id.get()
+        fecha_pedido = entrada_fecha_pedido.get()
+        cliente = entrada_cliente.get()
+        productos_solicitados = entrada_productos_solicitados.get()
+        costo_total = entrada_costo_total.get()
+        estado_pedido = entrada_estado_pedido.get()
+        metodo_pago = entrada_metodo_pago.get()
+        fecha_entrega_estimada = entrada_fecha_entrega_estimada.get()
+        direccion_entrega = entrada_direccion_entrega.get()
+        estado_pago = entrada_estado_pago.get()
+
+        # Conexión a la base de datos MySQL
+        try:
+            conexion = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="root",
+                database="proferros"
+            )
+            if conexion.is_connected():
+                cursor = conexion.cursor()
+                print("Conexión exitosa a la base de datos")
+
+                # Sentencia SQL para insertar un registro en la tabla de gestión de inventario
+                sql = "INSERT INTO registro_pedidos (`Id del pedido`, `Fecha del pedido`, `Cliente`, `Productos solicitados`, `Costo total del pedido`, `Estado del pedido`, `Metodo de pago`, `Fecha de entrega estimada`, `Direccion de entrega`, `Estado de pago`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                valores = (id_pedido, fecha_pedido, cliente, productos_solicitados, costo_total, estado_pedido, metodo_pago, fecha_entrega_estimada, direccion_entrega, estado_pago)
+
+                # Ejecutar la consulta SQL para agregar el registro
+                try:
+                    cursor.execute(sql, valores)
+                    conexion.commit()
+                    print("Registro agregado exitosamente")
+                except Error as e:
+                    print("Error al agregar registro:", e)
+                finally:
+                    cursor.close()
+                    conexion.close()
+                    print("Conexión cerrada")
+        except Error as e:
+            print("Error de conexión a la base de datos:", e)
+
+    # Función para eliminar un registro por ID
+    def eliminar_registro_pedidos():
+
+        # Oculta el cuadro de diálogo de inventario
+        dialogo_pedidos.withdraw()
+
+        # Crear una nueva ventana para ingresar el ID del producto a eliminar
+        ventana_eliminar_pedidos = tk.Toplevel(dialogo_pedidos)
+        ventana_eliminar_pedidos.title("Eliminar Registro")
+        ventana_eliminar_pedidos.geometry("375x250")
+        ventana_eliminar_pedidos.resizable(False, False)
+        
+        # Agregar una imagen de fondo al cuadro de diálogo de inventario (reemplaza la ruta de la imagen)
+        imagen_fondo_eliminar_pedidos = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Eliminar Registro 2.gif")
+        fondo_eliminar_pedidos = tk.Label(ventana_eliminar_pedidos, image=imagen_fondo_eliminar_pedidos)
+        fondo_eliminar_pedidos.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # Etiqueta y campo de entrada para ingresar el ID del producto
+        etiqueta_id_eliminar = tk.Label(ventana_eliminar_pedidos, text="ID del Productos", font=("Bell MT", 11))
+        etiqueta_id_eliminar.place(x=40, y=30)
+        entrada_id_eliminar = tk.Entry(ventana_eliminar_pedidos)
+        entrada_id_eliminar.place(x=220, y=30)
+
+        # Función para realizar la eliminación
+        def confirmar_eliminacion():
+            id_pedido = entrada_id_eliminar.get()
+            
+            # Conexión a la base de datos MySQL y eliminar el producto con el ID proporcionado
+            try:
+                conexion = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    password="root",
+                    database="proferros"
+                )
+                if conexion.is_connected():
+                    cursor = conexion.cursor()
+                    print("Conexión exitosa a la base de datos")
+
+                    # Sentencia SQL para eliminar un registro en la tabla de gestión de inventario
+                    sql = "DELETE FROM registro_pedidos WHERE `Id del pedido` = %s"
+                    valores = (id_pedido,)
+
+                    # Ejecutar la consulta SQL para eliminar el registro
+                    try:
+                        cursor.execute(sql, valores)
+                        conexion.commit()
+                        print("Registro eliminado exitosamente")
+                    except Error as e:
+                        print("Error al eliminar registro:", e)
+                    finally:
+                        cursor.close()
+                        conexion.close()
+                        print("Conexión cerrada")
+            except Error as e:
+                print("Error de conexión a la base de datos:", e)
+
+        # Botón para confirmar la eliminación
+        boton_confirmar_eliminacion = tk.Button(ventana_eliminar_pedidos, text="Confirmar Eliminación", command=confirmar_eliminacion, font=("Bell MT", 10)) 
+        boton_confirmar_eliminacion.place(x=30, y=70)
+
+        # Función para regresar a la gestión de inventario
+        def regresar_inventario_desde_eliminar():
+            # Oculta el cuadro de diálogo de eliminar registro
+            ventana_eliminar_pedidos.withdraw()
+
+            # Muestra nuevamente el cuadro de diálogo de inventario
+            dialogo_pedidos.deiconify()
+
+        # Botón para regresar a la gestión de inventario
+        boton_regresar_inventario_desde_eliminar = tk.Button(ventana_eliminar_pedidos, text="Regresar a Inventario", command=regresar_inventario_desde_eliminar, font=("Bell MT", 10))
+        boton_regresar_inventario_desde_eliminar.place(x=220, y=70)
+
+        ventana_eliminar_pedidos.mainloop()
+
+# Botones para agregar y eliminar registros
+    boton_agregar = tk.Button(dialogo_pedidos, text="Agregar Registro", command=agregar_registro, font=("Bell MT", 12))
+    boton_agregar.place(x=430, y=370)
+
+    boton_eliminar = tk.Button(dialogo_pedidos, text="Eliminar Registro", command=eliminar_registro_pedidos, font=("Bell MT", 12))
+    boton_eliminar.place(x=590, y=370)
+
+    def regresar_dialogo_principal():
+        dialogo_pedidos.withdraw()
+        dialogo_principal.deiconify()
+
+    # Botón para regresar al cuadro de diálogo principal
+    boton_regresar_principal = tk.Button(dialogo_pedidos, text="Regresar al Menu", command=regresar_dialogo_principal, font=("Bell MT", 12))
+    boton_regresar_principal.place(x=510, y=420)
+
+    # Ajusta la posición de etiquetas y campos de entrada usando place()
+    etiqueta_id.place(x=420, y=40)
+    entrada_id.place(x=610, y=40)
+
+    etiqueta_fecha_pedido.place(x=420, y=70)
+    entrada_fecha_pedido.place(x=610, y=70)
+
+    etiqueta_cliente.place(x=420, y=100)
+    entrada_cliente.place(x=610, y=100)
+
+    etiqueta_productos_solicitados.place(x=420, y=130)
+    entrada_productos_solicitados.place(x=610, y=130)
+
+    etiqueta_costo_total.place(x=420, y=170)
+    entrada_costo_total.place(x=610, y=170)
+
+    etiqueta_estado_pedido.place(x=420, y=200)
+    entrada_estado_pedido.place(x=610, y=200)
+
+    etiqueta_metodo_pago.place(x=420, y=230)
+    entrada_metodo_pago.place(x=610, y=230)
+
+    etiqueta_fecha_entrega_estimada.place(x=420, y=260)
+    entrada_fecha_entrega_estimada.place(x=610, y=260)
+
+    etiqueta_direccion_entrega.place(x=420, y=290)
+    entrada_direccion_entrega.place(x=610, y=290)
+
+    etiqueta_estado_pago.place(x=420, y=320)
+    entrada_estado_pago.place(x=610, y=320)
+
+    dialogo_pedidos.mainloop()   
+
+# Crear la ventana de inicio de sesión con imagen de fondo
+ventana_inicio = tk.Tk()
+ventana_inicio.title("Inicio de Sesión")
+ventana_inicio.geometry("600x400")
+ventana_inicio.resizable(False, False)
+
+ # Agregar una imagen de fondo al cuadro de diálogo de inventario (reemplaza la ruta de la imagen)
+imagen_fondo_inventario = tk.PhotoImage(file="C:/Users/Kevin Velíz/Downloads/Imagen Proyecto/Proferros.gif")
+fondo_inventario = tk.Label(dialogo_inventario, image=imagen_fondo_inventario)
+fondo_inventario.place(x=0, y=0, relwidth=1, relheight=1)
+
+font = ("Georgia", 10)
+
+# Ajusta la posición de las etiquetas y campos de entrada
+usuario_label = tk.Label(ventana_inicio, text="Nombre de usuario:", font=font)
+usuario_label.place(x=20, y=55)
+usuario_entry = tk.Entry(ventana_inicio, font=font)
+usuario_entry.place(x=160, y=55)
+
+contrasena_label = tk.Label(ventana_inicio, text="Contraseña:", font=font)
+contrasena_label.place(x=20, y=105)
+contrasena_entry = tk.Entry(ventana_inicio, show="*", font=font)
+contrasena_entry.place(x=160, y=105)
+
+iniciar_sesion_button = tk.Button(ventana_inicio, text="Iniciar Sesión", command=verificar_credenciales, font=font)
+iniciar_sesion_button.place(x=140, y=155)
+
+ventana_inicio.mainloop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
